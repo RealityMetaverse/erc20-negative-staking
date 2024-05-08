@@ -16,10 +16,12 @@ abstract contract AccessControl is ProgramManager {
      */
     enum AccessTier {
         ADMIN,
-        OWNER
+        OWNER,
+        TREASUARY
     }
 
     address public contractOwner;
+    address public treasuary;
     mapping(address => bool) public contractAdmins;
 
     // ======================================
@@ -32,7 +34,9 @@ abstract contract AccessControl is ProgramManager {
     // ======================================
     // Functions to check authorization and revert if not authorized
     function _checkAccess(AccessTier tierToCheck) private view {
-        if (tierToCheck == AccessTier.OWNER && msg.sender != contractOwner) {
+        if (tierToCheck == AccessTier.TREASUARY && msg.sender != treasuary) {
+            revert UnauthorizedAccess(tierToCheck);
+        } else if (tierToCheck == AccessTier.OWNER && msg.sender != contractOwner) {
             revert UnauthorizedAccess(tierToCheck);
         } else if (tierToCheck == AccessTier.ADMIN && !contractAdmins[msg.sender] && msg.sender != contractOwner) {
             revert UnauthorizedAccess(tierToCheck);
@@ -42,7 +46,21 @@ abstract contract AccessControl is ProgramManager {
     // ======================================
     // =             Modifiers              =
     // ======================================
-    /// @dev The functions only accesible by the address deployed the contract
+    /**
+     * @dev
+     * The functions only accesible by the treasuary
+     * The address deployed the contract is the treasuary by default
+     */
+    modifier onlyTreasuary() {
+        _checkAccess(AccessTier.TREASUARY);
+        _;
+    }
+
+    /**
+     * @dev
+     * The functions only accesible by the contractOwner
+     * The address deployed the contract is the contractOwner by default
+     */
     modifier onlyContractOwner() {
         _checkAccess(AccessTier.OWNER);
         _;

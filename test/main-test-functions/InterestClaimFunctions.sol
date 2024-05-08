@@ -9,7 +9,7 @@ contract InterestClaimFunctions is AuxiliaryFunctions {
         view
         returns (uint256)
     {
-        uint256 userBalanceBefore = _getTokenBalance(userAddress);
+        uint256 userBalanceBefore = _getInterestTokenBalance(userAddress);
         uint256 _claimableInterest = stakingContract.checkClaimableInterestBy(userAddress, _poolID, _depositNo);
         uint256 userBalanceAfter = userBalanceBefore + _claimableInterest;
 
@@ -20,7 +20,7 @@ contract InterestClaimFunctions is AuxiliaryFunctions {
         internal
     {
         assertEq(stakingContract.checkClaimableInterestBy(userAddress, _poolID, _depositNo), 0);
-        assertEq(_getTokenBalance(userAddress), userBalanceAfter);
+        assertEq(_getInterestTokenBalance(userAddress), userBalanceAfter);
     }
 
     function _claimInterestWithTest(address userAddress, uint256 _poolID, uint256 _depositNo, bool ifRevertExpected)
@@ -49,7 +49,7 @@ contract InterestClaimFunctions is AuxiliaryFunctions {
             vm.expectRevert();
             stakingContract.claimAllInterest(_poolID);
         } else {
-            uint256 userBalanceBefore = _getTokenBalance(userAddress);
+            uint256 userBalanceBefore = _getInterestTokenBalance(userAddress);
 
             uint256 _claimableInterest;
             uint256 depositCount = stakingContract.checkDepositCountOfAddress(userAddress, _poolID);
@@ -68,7 +68,7 @@ contract InterestClaimFunctions is AuxiliaryFunctions {
             }
 
             assertEq(newclaimableInterest, 0);
-            assertEq(_getTokenBalance(userAddress), userBalanceAfter);
+            assertEq(_getInterestTokenBalance(userAddress), userBalanceAfter);
         }
 
         if (userAddress != address(this)) vm.stopPrank();

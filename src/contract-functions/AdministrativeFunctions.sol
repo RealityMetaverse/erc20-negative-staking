@@ -10,11 +10,19 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
     // =     Program Parameter Setters      =
     // ======================================
     function transferOwnership(address userAddress) external onlyContractOwner {
-        require(userAddress != address(0), "new contract owner cannot be zero");
+        require(userAddress != address(0), "New contract owner cannot be zero");
         require(userAddress != msg.sender, "Same with current owner");
         contractOwner = userAddress;
 
         emit TransferOwnership(msg.sender, userAddress);
+    }
+
+    function changeTreasuryAddress(address newTreasuary) external onlyTreasuary {
+        require(newTreasuary != address(0), "New treasuary address cannot be zero");
+        require(newTreasuary != msg.sender, "Same with current treasuary");
+        treasuary = newTreasuary;
+
+        emit ChangeTreasuryAddress(msg.sender, newTreasuary);
     }
 
     function addContractAdmin(address userAddress) external onlyContractOwner {
@@ -48,6 +56,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         PoolType typeToSet,
         uint256 stakingTargetToSet,
         uint256 minimumDepositToSet,
+        uint256 stakingFeeToSet,
         bool stakingAvailabilityStatus,
         uint256 APYToSet
     ) private {
@@ -55,6 +64,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         targetPool.poolType = typeToSet;
         targetPool.stakingTarget = stakingTargetToSet;
         targetPool.minimumDeposit = minimumDepositToSet;
+        targetPool.stakingFeePercentage = stakingFeeToSet;
         targetPool.isStakingOpen = stakingAvailabilityStatus;
         targetPool.isWithdrawalOpen = (typeToSet == PoolType.LOCKED) ? false : true;
         targetPool.isInterestClaimOpen = true;
@@ -75,14 +85,17 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         uint256 stakingTargetToSet,
         uint256 minimumDepositToSet,
         bool stakingAvailabilityStatus,
-        uint256 APYToSet
+        uint256 APYToSet,
+        uint256 stakingFeeToSet
     ) external onlyContractOwner {
         if (minimumDepositToSet == 0) revert InvalidArgumentValue("Minimum Deposit", 1);
         if (APYToSet == 0) revert InvalidArgumentValue("APY", 1);
+        if (stakingFeeToSet > 100) revert StakingFeePercentageOverflow(stakingFeeToSet, 100); 
         _addStakingPool(
             typeToSet,
             stakingTargetToSet,
             minimumDepositToSet,
+            stakingFeeToSet * FIXED_POINT_PRECISION,
             stakingAvailabilityStatus,
             APYToSet * FIXED_POINT_PRECISION
         );
@@ -98,9 +111,20 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
      *     - Sets isInterestClaimOpen true
      *
      */
-    function addStakingPoolDefault(PoolType typeToSet, uint256 APYToSet) external onlyContractOwner {
+    function addStakingPoolDefault(PoolType typeToSet, uint256 APYToSet, uint256 stakingFeeToSet)
+        external
+        onlyContractOwner
+    {
         if (APYToSet == 0) revert InvalidArgumentValue("APY", 1);
-        _addStakingPool(typeToSet, defaultStakingTarget, defaultMinimumDeposit, true, APYToSet * FIXED_POINT_PRECISION);
+        if (stakingFeeToSet > 100) revert StakingFeePercentageOverflow(stakingFeeToSet, 100);
+        _addStakingPool(
+            typeToSet,
+            defaultStakingTarget,
+            defaultMinimumDeposit,
+            stakingFeeToSet * FIXED_POINT_PRECISION,
+            true,
+            APYToSet * FIXED_POINT_PRECISION
+        );
     }
 
     /**
@@ -218,6 +242,20 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         emit UpdateAPY(poolID, newAPY);
     }
 
+    function setPoolStakingFee(uint256 poolID, uint256 newStakingFee)
+        public
+        onlyContractOwner
+        ifPoolExists(poolID)
+        ifPoolEnded(poolID)
+    {
+        if (newStakingFee > 100) revert StakingFeePercentageOverflow(newStakingFee, 100);
+        uint256 StakingFeeToWei = (newStakingFee == 0) ? newStakingFee : newStakingFee * FIXED_POINT_PRECISION;
+        require(StakingFeeToWei != stakingPoolList[poolID].stakingFeePercentage, "The same as current Staking Fee");
+
+        stakingPoolList[poolID].stakingFeePercentage = StakingFeeToWei;
+        emit UpdateStakingFee(poolID, newStakingFee);
+    }
+
     function setPoolMiniumumDeposit(uint256 poolID, uint256 newMinimumDeposit)
         external
         onlyContractOwner
@@ -269,7 +307,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         targetPool.totalList[DataType.FUNDS_COLLECTED] += tokenAmount;
 
         emit CollectFunds(msg.sender, poolID, tokenAmount);
-        _sendToken(msg.sender, tokenAmount);
+        _sendStakingToken(msg.sender, tokenAmount);
     }
 
     /// @dev Restores funds collected from the target StakingPool
@@ -286,7 +324,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         targetPool.totalList[DataType.FUNDS_RESTORED] += tokenAmount;
 
         emit RestoreFunds(msg.sender, poolID, tokenAmount);
-        _receiveToken(tokenAmount);
+        _receiveStakingToken(tokenAmount);
     }
 
     function collectInterestPoolFunds(uint256 tokenAmount)
@@ -298,7 +336,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         interestPool -= tokenAmount;
 
         emit CollectInterest(msg.sender, tokenAmount);
-        _sendToken(msg.sender, tokenAmount);
+        _sendInterestToken(msg.sender, tokenAmount);
     }
 
     function provideInterest(uint256 tokenAmount) external nonReentrant onlyAdmins {
@@ -306,6 +344,6 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         interestPool += tokenAmount;
 
         emit ProvideInterest(msg.sender, tokenAmount);
-        _receiveToken(tokenAmount);
+        _receiveInterestToken(tokenAmount);
     }
 }

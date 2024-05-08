@@ -11,6 +11,7 @@ import "../src/ProgramManager.sol";
 
 contract TestSetUp is Test {
     MockToken myToken;
+    MockToken myInterestToken;
 
     uint256 myTokenDecimal = 18;
     uint256 myTokenDecimals = 10 ** myTokenDecimal;
@@ -21,6 +22,8 @@ contract TestSetUp is Test {
     uint256 _lockedAPY = 200;
     uint256 _flexibleAPY = 10;
 
+    uint256 _stakingFee = 30;
+
     ERC20Staking stakingContract;
     uint256 _confirmationCode = 0;
 
@@ -28,12 +31,13 @@ contract TestSetUp is Test {
     address userOne = address(2);
     address userTwo = address(3);
     address userThree = address(4);
+    address treasuaryAddress = address(10);
 
     address[] addressList = [userOne, userTwo, userThree];
     uint256 amountToProvide = 1000 * myTokenDecimals;
     uint256 amountToStake = 10 * myTokenDecimals;
 
-    uint256 tokenToDistribute = 1000 * myTokenDecimals;
+    uint256 tokenToDistribute = 2000 * myTokenDecimals;
 
     enum PMActions {
         PAUSE,
@@ -42,15 +46,20 @@ contract TestSetUp is Test {
 
     function setUp() external {
         myToken = new MockToken(myTokenDecimal);
-        stakingContract =
-            new ERC20Staking(address(myToken), _defaultStakingTarget, _defaultMinimumDeposit, _confirmationCode);
+        myInterestToken = new MockToken(myTokenDecimal);
+
+        stakingContract = new ERC20Staking(
+            address(myToken), address(myInterestToken), _defaultStakingTarget, _defaultMinimumDeposit, _confirmationCode
+        );
         stakingContract.addContractAdmin(contractAdmin);
+        stakingContract.changeTreasuryAddress(treasuaryAddress);
 
         for (uint256 userNo = 0; userNo < addressList.length; userNo++) {
             myToken.transfer(addressList[userNo], tokenToDistribute);
         }
 
-        myToken.transfer(userThree, _defaultStakingTarget);
+        myToken.transfer(userThree, _defaultStakingTarget * 2);
         myToken.transfer(contractAdmin, tokenToDistribute);
+        myInterestToken.transfer(contractAdmin, tokenToDistribute);
     }
 }

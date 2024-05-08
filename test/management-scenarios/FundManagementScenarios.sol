@@ -9,10 +9,10 @@ contract FundManagementScenarios is WithdrawalFunctions {
 
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
 
-        stakingContract.collectFunds(0, amountToStake);
+        stakingContract.collectFunds(0, _calculateNETStakedAmount(0, amountToStake));
 
-        _increaseAllowance(address(this), amountToStake);
-        stakingContract.restoreFunds(0, amountToStake);
+        _increaseSTAllowance(address(this), amountToStake);
+        stakingContract.restoreFunds(0, _calculateNETStakedAmount(0, amountToStake));
     }
 
     function test_CollectFunds_NotEnoughFundsInThePool() external {
@@ -22,9 +22,10 @@ contract FundManagementScenarios is WithdrawalFunctions {
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
         _stakeTokenWithAllowance(userOne, 1, amountToStake);
 
-        stakingContract.collectFunds(0, amountToStake);
+        uint256 _netStaked = _calculateNETStakedAmount(0, amountToStake);
+        stakingContract.collectFunds(0, _netStaked);
         vm.expectRevert();
-        stakingContract.collectFunds(0, amountToStake);
+        stakingContract.collectFunds(0, _netStaked);
     }
 
     function test_RestoreFunds_NotEnoughFundsInThePool() external {
@@ -34,7 +35,7 @@ contract FundManagementScenarios is WithdrawalFunctions {
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
         _stakeTokenWithAllowance(userOne, 1, amountToStake);
 
-        stakingContract.collectFunds(0, amountToStake);
+        stakingContract.collectFunds(0, _calculateNETStakedAmount(0, amountToStake));
 
         _withdrawTokenWithTest(userOne, 0, 0, true, true);
     }

@@ -20,6 +20,8 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
      *
      */
     error InvalidArgumentValue(string argument, uint256 minValue);
+    /// @dev Exception raised when the stakingFeePercentage is over 100
+    error StakingFeePercentageOverflow(uint256 input, uint256 maxPercentage);
     /**
      * @dev
      *     - Exception raised when the stakeToken function called while the isStakingOpen parameter of the pool is false
@@ -34,9 +36,11 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     /// @dev Exception raised if the function called to withdraw a non-existent deposit
     error DepositDoesNotExist(uint256 poolID, uint256 depositNumber);
     /// @dev Exception raised if the total staked token amount will surrpass the  of the pool with the intended token amount to stake
-    error AmountExceedsPoolTarget(uint256 poolID);
+    error AmountExceedsPoolTarget(uint256 poolID, uint256 _tokenSent, uint256 availableAmountToStake);
     /// @dev Exception raised if the token amount sent is over the fund left to restore
     error RestorationExceedsCollected(uint256 _tokenSent, uint256 _RemainingAmountToRestore);
+    /// @dev Exception raised when the user doesn't own enough token to stake and pay the staking fee
+    error InsufficientBalance(uint256 intendedAmount, uint256 available);
     /// @dev Exception raised when the intended token amount to stake is lower than StakingPool.minimumDeposit
     error InsufficentDeposit(uint256 _tokenSent, uint256 _requiredAmount);
     /// @dev Exception raised when users try to withdraw from a staking pool which they haven't staked any tokens in
@@ -105,13 +109,14 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
         return poolEnded;
     }
 
+    /// @dev Checks if the staked funds in the pool will exceed the staking target with the current staking request, raises exception if yes
     function _checkIfTargetReached(uint256 poolID, uint256 _amountToStake) internal view {
         StakingPool storage targetStakingPool = stakingPoolList[poolID];
         uint256 _stakingTarget = targetStakingPool.stakingTarget;
         uint256 _totalStaked = targetStakingPool.totalList[DataType.STAKED];
 
         if ((_amountToStake + _totalStaked) > _stakingTarget) {
-            revert AmountExceedsPoolTarget(poolID);
+            revert AmountExceedsPoolTarget(poolID, _amountToStake, _stakingTarget - _totalStaked);
         }
     }
 
@@ -144,9 +149,12 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
         _;
     }
 
-    /// @dev Checks if the staked funds in the pool will exceed the staking target with the current staking request, raises exception if yes
-    modifier ifTargetReached(uint256 poolID, uint256 _amountToStake) {
-        _checkIfTargetReached(poolID, _amountToStake);
+    /// @dev Checks if the user owns enough token to stake and pay the staking fee
+    modifier ifUserOwnsEnoughTokens(uint256 intendedAmount) {
+        uint256 userBalance = STAKING_TOKEN.balanceOf(msg.sender);
+        if (intendedAmount > userBalance) {
+            revert InsufficientBalance(intendedAmount, userBalance);
+        }
         _;
     }
 
@@ -197,6 +205,7 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     );
 
     event TransferOwnership(address from, address to);
+    event ChangeTreasuryAddress(address from, address to);
 
     event AddContractAdmin(address indexed user);
     event RemoveContractAdmin(address indexed user);
@@ -217,7 +226,9 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
         uint256 indexed poolID,
         PoolType indexed poolType,
         uint256 depositNumber,
-        uint256 tokenAmount
+        uint256 stakedAmount,
+        uint256 stakingFeePercentage,
+        uint256 stakingFeePaid
     );
     event Withdraw(
         address indexed by,
@@ -237,6 +248,7 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     event UpdateStakingTarget(uint256 poolID, uint256 newStakingTarget);
     event UpdateMinimumDeposit(uint256 poolID, uint256 newMinimumDeposit);
     event UpdateAPY(uint256 indexed poolID, uint256 newAPY);
+    event UpdateStakingFee(uint256 indexed poolID, uint256 newStakingFee);
 
     event UpdateStakingStatus(address indexed by, uint256 poolID, bool isOpen);
     event UpdateWithdrawalStatus(address indexed by, uint256 poolID, bool isOpen);
@@ -245,11 +257,23 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     // ======================================
     // =    Token Management Functions      =
     // ======================================
-    function _receiveToken(uint256 tokenAmount) internal {
+    function _receiveStakingToken(uint256 tokenAmount) internal {
         STAKING_TOKEN.safeTransferFrom(msg.sender, address(this), tokenAmount);
     }
 
-    function _sendToken(address toAddress, uint256 tokenAmount) internal {
+    function _receiveInterestToken(uint256 tokenAmount) internal {
+        INTEREST_TOKEN.safeTransferFrom(msg.sender, address(this), tokenAmount);
+    }
+
+    function _payTreasuaryStakingToken(uint256 tokenAmount) internal {
+        STAKING_TOKEN.safeTransferFrom(msg.sender, treasuary, tokenAmount);
+    }
+
+    function _sendStakingToken(address toAddress, uint256 tokenAmount) internal {
         STAKING_TOKEN.safeTransfer(toAddress, tokenAmount);
+    }
+
+    function _sendInterestToken(address toAddress, uint256 tokenAmount) internal {
+        INTEREST_TOKEN.safeTransfer(toAddress, tokenAmount);
     }
 }

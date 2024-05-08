@@ -10,6 +10,7 @@ contract ProgramManager {
     // =          State Variables           =
     // ======================================
     IERC20Metadata public immutable STAKING_TOKEN;
+    IERC20Metadata public immutable INTEREST_TOKEN;
     uint256 internal constant FIXED_POINT_PRECISION = 10 ** 18;
 
     // Default value to set the stakingTarget property for the new StakingPool if not specified
@@ -24,10 +25,10 @@ contract ProgramManager {
      */
     uint256 internal immutable CONFIRMATION_CODE;
 
-    /// Program token balance for paying interests
+    /// Program interest token balance for paying interests
     uint256 internal interestPool;
     /**
-     *   - The list of users who donated/provided tokens to the interestPool
+     *   - The list of users who donated/provided interest tokens to the interestPool
      *   - Direct token transactions (via receive function) ends up in the interestPool
      */
     mapping(address => uint256) internal interestProviderList;
@@ -60,7 +61,8 @@ contract ProgramManager {
         WITHDREW,
         INTEREST_CLAIMED,
         FUNDS_COLLECTED,
-        FUNDS_RESTORED
+        FUNDS_RESTORED,
+        FEE_PAID
     }
     enum PoolDataType {
         IS_STAKING_OPEN,
@@ -86,6 +88,7 @@ contract ProgramManager {
         uint256 stakingTarget;
         uint256 minimumDeposit;
         uint256 APY;
+        uint256 stakingFeePercentage;
         uint256 endDate;
         bool isStakingOpen;
         bool isWithdrawalOpen;
@@ -103,8 +106,9 @@ contract ProgramManager {
     // The list holding all the created pools
     StakingPool[] internal stakingPoolList;
 
-    constructor(IERC20Metadata _stakingToken, uint256 _confirmationCode) {
+    constructor(IERC20Metadata _stakingToken, IERC20Metadata _interestToken, uint256 _confirmationCode) {
         STAKING_TOKEN = _stakingToken;
+        INTEREST_TOKEN = _interestToken;
         CONFIRMATION_CODE = _confirmationCode;
     }
 }

@@ -52,6 +52,10 @@ abstract contract ReadFunctions is ComplianceCheck {
         return stakingPoolList[poolID].APY / FIXED_POINT_PRECISION;
     }
 
+    function checkStakingFee(uint256 poolID) external view ifPoolExists(poolID) returns (uint256) {
+        return stakingPoolList[poolID].stakingFeePercentage / FIXED_POINT_PRECISION;
+    }
+
     /// @dev Returns timestamp
     function checkEndDate(uint256 poolID) external view ifPoolExists(poolID) returns (uint256) {
         return stakingPoolList[poolID].endDate;
@@ -79,6 +83,10 @@ abstract contract ReadFunctions is ComplianceCheck {
         return stakingPoolList[poolID].totalList[DataType.STAKED];
     }
 
+    function checkTotalFeePaid(uint256 poolID) public view ifPoolExists(poolID) returns (uint256) {
+        return stakingPoolList[poolID].totalList[DataType.FEE_PAID];
+    }
+
     function checkTotalWithdrawn(uint256 poolID) external view ifPoolExists(poolID) returns (uint256) {
         return stakingPoolList[poolID].totalList[DataType.WITHDREW];
     }
@@ -96,7 +104,7 @@ abstract contract ReadFunctions is ComplianceCheck {
     }
 
     // ======================================
-    // =    Functoins to check user data    =
+    // =    Functions to check user data    =
     // ======================================
     function checkStakedAmountBy(address userAddress, uint256 poolID)
         external

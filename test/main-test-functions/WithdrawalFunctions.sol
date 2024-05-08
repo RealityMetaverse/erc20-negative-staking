@@ -59,11 +59,13 @@ contract WithdrawalFunctions is InterestClaimFunctions {
 
             withdrawnByUser = _getTotalWithdrawnBy(userAddress, _poolID) - withdrawnbyUserBefore;
 
-            uint256[] memory expectedData = new uint256[](4);
+            uint256[] memory expectedData = new uint256[](7);
             expectedData[0] = currentData[0] - withdrawnByUser;
-            expectedData[1] = currentData[1] + withdrawnByUser + ((ifWithInterest) ? _interestToClaim : 0);
+            expectedData[1] = currentData[1] + withdrawnByUser;
             expectedData[2] = currentData[2] - withdrawnByUser;
-            expectedData[3] = currentData[3] - withdrawnByUser - ((ifWithInterest) ? _interestToClaim : 0);
+            expectedData[3] = currentData[3] - withdrawnByUser;
+            expectedData[5] = currentData[5] + _interestToClaim;
+            expectedData[6] = currentData[6] - _interestToClaim;
 
             currentData = _getCurrentData(userAddress, _poolID);
 
@@ -71,6 +73,8 @@ contract WithdrawalFunctions is InterestClaimFunctions {
             assertEq(currentData[1], expectedData[1]);
             assertEq(currentData[2], expectedData[2]);
             assertEq(currentData[3], expectedData[3]);
+            assertEq(currentData[5], expectedData[5]);
+            assertEq(currentData[6], expectedData[6]);
 
             if (ifWithInterest) assertEq(_trackInterestClaimWithWithdrawal(userAddress, _poolID, _depositNo), 0);
         }

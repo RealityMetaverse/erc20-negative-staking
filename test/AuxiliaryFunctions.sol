@@ -24,9 +24,9 @@ contract AuxiliaryFunctions is ReadFunctions {
         if (userAddress != address(this)) vm.startPrank(userAddress);
 
         if (ifLocked) {
-            stakingContract.addStakingPoolDefault(ProgramManager.PoolType.LOCKED, _lockedAPY);
+            stakingContract.addStakingPoolDefault(ProgramManager.PoolType.LOCKED, _lockedAPY, _stakingFee);
         } else {
-            stakingContract.addStakingPoolDefault(ProgramManager.PoolType.FLEXIBLE, _flexibleAPY);
+            stakingContract.addStakingPoolDefault(ProgramManager.PoolType.FLEXIBLE, _flexibleAPY, _stakingFee);
         }
 
         if (userAddress != address(this)) vm.stopPrank();
@@ -37,11 +37,21 @@ contract AuxiliaryFunctions is ReadFunctions {
 
         if (ifLocked) {
             stakingContract.addStakingPoolCustom(
-                ProgramManager.PoolType.LOCKED, _defaultStakingTarget, _defaultMinimumDeposit, true, _lockedAPY
+                ProgramManager.PoolType.LOCKED,
+                _defaultStakingTarget,
+                _defaultMinimumDeposit,
+                true,
+                _lockedAPY,
+                _stakingFee
             );
         } else {
             stakingContract.addStakingPoolCustom(
-                ProgramManager.PoolType.FLEXIBLE, _defaultStakingTarget, _defaultMinimumDeposit, false, _flexibleAPY
+                ProgramManager.PoolType.FLEXIBLE,
+                _defaultStakingTarget,
+                _defaultMinimumDeposit,
+                false,
+                _flexibleAPY,
+                _stakingFee
             );
         }
 
@@ -56,10 +66,18 @@ contract AuxiliaryFunctions is ReadFunctions {
         if (userAddress != address(this)) vm.stopPrank();
     }
 
-    function _increaseAllowance(address userAddress, uint256 tokenAmount) internal {
+    function _increaseSTAllowance(address userAddress, uint256 tokenAmount) internal {
         if (userAddress != address(this)) vm.startPrank(userAddress);
 
         myToken.increaseAllowance(address(stakingContract), tokenAmount);
+
+        if (userAddress != address(this)) vm.stopPrank();
+    }
+
+    function _increaseINTAllowance(address userAddress, uint256 tokenAmount) internal {
+        if (userAddress != address(this)) vm.startPrank(userAddress);
+
+        myInterestToken.increaseAllowance(address(stakingContract), tokenAmount);
 
         if (userAddress != address(this)) vm.stopPrank();
     }
@@ -76,11 +94,14 @@ contract AuxiliaryFunctions is ReadFunctions {
             uint256[] memory currentData = _getCurrentData(userAddress, _poolID);
             uint256 userDepositCountBefore = _getUserDepositCount(userAddress, _poolID);
 
-            uint256[] memory expectedData = new uint256[](4);
-            expectedData[0] = currentData[0] + tokenAmount;
+            uint256 _netStaked = _calculateNETStakedAmount(_poolID, tokenAmount);
+
+            uint256[] memory expectedData = new uint256[](7);
+            expectedData[0] = currentData[0] + _netStaked;
             expectedData[1] = currentData[1] - tokenAmount;
-            expectedData[2] = currentData[2] + tokenAmount;
-            expectedData[3] = currentData[3] + tokenAmount;
+            expectedData[2] = currentData[2] + _netStaked;
+            expectedData[3] = currentData[3] + _netStaked;
+            expectedData[4] = currentData[4] + (tokenAmount - _netStaked);
 
             stakingContract.stakeToken(_poolID, tokenAmount);
 
@@ -90,6 +111,7 @@ contract AuxiliaryFunctions is ReadFunctions {
             assertEq(currentData[1], expectedData[1]);
             assertEq(currentData[2], expectedData[2]);
             assertEq(currentData[3], expectedData[3]);
+            assertEq(currentData[4], expectedData[4]);
             assertEq(_getUserDepositCount(userAddress, _poolID), userDepositCountBefore + 1);
         }
 
@@ -97,7 +119,7 @@ contract AuxiliaryFunctions is ReadFunctions {
     }
 
     function _stakeTokenWithAllowance(address userAddress, uint256 _poolID, uint256 tokenAmount) internal {
-        _increaseAllowance(userAddress, tokenAmount);
+        _increaseSTAllowance(userAddress, tokenAmount);
         _stakeTokenWithTest(userAddress, _poolID, tokenAmount, false);
     }
 
@@ -110,9 +132,23 @@ contract AuxiliaryFunctions is ReadFunctions {
 
         for (uint256 No = 0; No < howManyTimes; No++) {
             for (uint256 userNo = 0; userNo < addressList.length; userNo++) {
-                _increaseAllowance(addressList[userNo], amountToStake);
+                _increaseSTAllowance(addressList[userNo], amountToStake);
                 _stakeTokenWithTest(addressList[userNo], No, amountToStake, false);
             }
         }
+    }
+
+    function _calculateNETStakedAmount(uint256 poolID, uint256 tokenAmount) internal view returns (uint256) {
+        uint256 amountToBeStaked;
+        uint256 _stakingFee = stakingContract.checkStakingFee(poolID);
+
+        if (_stakingFee != 0) {
+            uint256 stakingFeeToBePaid = (tokenAmount * _stakingFee * myTokenDecimals / 100) / myTokenDecimals;
+            amountToBeStaked = tokenAmount - stakingFeeToBePaid;
+        } else {
+            amountToBeStaked = tokenAmount;
+        }
+
+        return amountToBeStaked;
     }
 }

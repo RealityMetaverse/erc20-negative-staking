@@ -76,7 +76,7 @@ contract MainManagementScenarios is AuxiliaryFunctions {
     // =      Interest Management Test      =
     // ======================================
     function test_InterestManagement_ProvideInterest() external {
-        _increaseAllowance(contractAdmin, amountToProvide);
+        _increaseINTAllowance(contractAdmin, amountToProvide);
 
         vm.startPrank(contractAdmin);
         stakingContract.provideInterest(amountToProvide);
@@ -84,7 +84,7 @@ contract MainManagementScenarios is AuxiliaryFunctions {
     }
 
     function test_InterestManagement_CollectInterestPoolFunds() external {
-        _increaseAllowance(contractAdmin, amountToProvide);
+        _increaseINTAllowance(contractAdmin, amountToProvide);
 
         vm.startPrank(contractAdmin);
         stakingContract.provideInterest(amountToProvide);
@@ -96,7 +96,7 @@ contract MainManagementScenarios is AuxiliaryFunctions {
     }
 
     function test_InterestManagement_NotEnoughFundsInTheInterestPool() external {
-        _increaseAllowance(address(this), amountToProvide);
+        _increaseINTAllowance(address(this), amountToProvide);
 
         stakingContract.provideInterest(amountToProvide);
         stakingContract.collectInterestPoolFunds(amountToProvide);

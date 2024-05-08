@@ -181,7 +181,7 @@ abstract contract WithdrawFunctions is ReadFunctions, WriteFunctions {
         interestPool -= interestToClaim;
 
         emit ClaimInterest(msg.sender, poolID, depositNumber, interestToClaim);
-        _sendToken(msg.sender, interestToClaim);
+        _sendInterestToken(msg.sender, interestToClaim);
     }
 
     /// @dev isBatchClaim = true because the function is called by withdraw function and we don't want to raise an exception when nothing to claim
@@ -233,7 +233,7 @@ abstract contract WithdrawFunctions is ReadFunctions, WriteFunctions {
             _updatePoolData(ActionType.WITHDRAWAL, poolID, msg.sender, depositNumber, amountToWithdraw);
 
             emit Withdraw(msg.sender, poolID, stakingPoolList[poolID].poolType, depositNumber, amountToWithdraw);
-            _sendToken(msg.sender, amountToWithdraw);
+            _sendStakingToken(msg.sender, amountToWithdraw);
         }
     }
 

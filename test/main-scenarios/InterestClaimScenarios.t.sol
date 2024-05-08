@@ -10,7 +10,7 @@ contract InterestClaimScenarios is InterestClaimFunctions {
         vm.warp(1706809873);
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
 
-        _increaseAllowance(address(this), amountToProvide);
+        _increaseINTAllowance(address(this), amountToProvide);
         stakingContract.provideInterest(amountToProvide);
 
         vm.warp(1738401000);
@@ -25,7 +25,7 @@ contract InterestClaimScenarios is InterestClaimFunctions {
             _stakeTokenWithAllowance(userOne, 0, amountToStake);
         }
 
-        _increaseAllowance(address(this), amountToProvide);
+        _increaseINTAllowance(address(this), amountToProvide);
         stakingContract.provideInterest(amountToProvide);
 
         vm.warp(1738401000);
@@ -46,7 +46,7 @@ contract InterestClaimScenarios is InterestClaimFunctions {
 
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
 
-        _increaseAllowance(address(this), amountToProvide);
+        _increaseINTAllowance(address(this), amountToProvide);
         stakingContract.provideInterest(amountToProvide);
 
         _claimInterestWithTest(userOne, 0, 0, true);
@@ -59,7 +59,7 @@ contract InterestClaimScenarios is InterestClaimFunctions {
         vm.warp(1706809873);
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
 
-        _increaseAllowance(address(this), amountToProvide);
+        _increaseINTAllowance(address(this), amountToProvide);
         stakingContract.provideInterest(amountToProvide);
 
         vm.warp(1738401000);

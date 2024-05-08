@@ -17,7 +17,7 @@ contract StakingScenarious is AuxiliaryFunctions {
     function test_Staking_IncreasedAllowance() external {
         _addPool(address(this), true);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 0, amountToStake, false);
     }
 
@@ -28,19 +28,21 @@ contract StakingScenarious is AuxiliaryFunctions {
     function test_Staking_InsufficentDeposit() external {
         _addPool(address(this), true);
 
-        _increaseAllowance(userOne, 1);
+        _increaseSTAllowance(userOne, 1);
         _stakeTokenWithTest(userOne, 0, 1, true);
     }
 
     function test_Staking_AmountExceedsTarget() external {
         _addPool(address(this), true);
         _addPool(address(this), true);
-        _stakeTokenWithAllowance(userThree, 0, stakingContract.checkStakingTarget(0));
+        uint256 _grossAmountToStake =
+            stakingContract.checkStakingTarget(0) * 100 / (100 - stakingContract.checkStakingFee(0));
+        _stakeTokenWithAllowance(userThree, 0, _grossAmountToStake);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 0, amountToStake, true);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 1, amountToStake, false);
     }
 
@@ -48,7 +50,7 @@ contract StakingScenarious is AuxiliaryFunctions {
         _addPool(address(this), true);
         stakingContract.changePoolAvailabilityStatus(0, 0, false);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 0, amountToStake, true);
     }
 
@@ -56,7 +58,7 @@ contract StakingScenarious is AuxiliaryFunctions {
         _addPool(address(this), true);
         _performPMActions(address(this), PMActions.PAUSE);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 0, amountToStake, true);
     }
 
@@ -73,10 +75,10 @@ contract StakingScenarious is AuxiliaryFunctions {
         _addPool(address(this), true);
         _endPool(address(this), 0);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 1, amountToStake, false);
 
-        _increaseAllowance(userOne, amountToStake);
+        _increaseSTAllowance(userOne, amountToStake);
         _stakeTokenWithTest(userOne, 0, amountToStake, true);
     }
 }
