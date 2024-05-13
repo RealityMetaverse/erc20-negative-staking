@@ -56,12 +56,12 @@ contract MainManagementScenarios is AuxiliaryFunctions {
                 assertTrue(stakingContract.checkIfPoolEnded(No));
                 assertFalse(stakingContract.checkIfStakingOpen(No));
                 assertTrue(stakingContract.checkIfWithdrawalOpen(No));
-                assertTrue(stakingContract.checkIfInterestClaimOpen(No));
+                assertTrue(stakingContract.checkIfRewardClaimOpen(No));
             } else {
                 assertFalse(stakingContract.checkIfPoolEnded(No));
                 assertTrue(stakingContract.checkIfStakingOpen(No));
                 assertFalse(stakingContract.checkIfWithdrawalOpen(No));
-                assertTrue(stakingContract.checkIfInterestClaimOpen(No));
+                assertTrue(stakingContract.checkIfRewardClaimOpen(No));
             }
         }
     }
@@ -73,35 +73,35 @@ contract MainManagementScenarios is AuxiliaryFunctions {
     }
 
     // ======================================
-    // =      Interest Management Test      =
+    // =      Reward Management Test      =
     // ======================================
-    function test_InterestManagement_ProvideInterest() external {
+    function test_RewardManagement_ProvideReward() external {
         _increaseINTAllowance(contractAdmin, amountToProvide);
 
         vm.startPrank(contractAdmin);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
         vm.stopPrank();
     }
 
-    function test_InterestManagement_CollectInterestPoolFunds() external {
+    function test_RewardManagement_CollectRewardPoolFunds() external {
         _increaseINTAllowance(contractAdmin, amountToProvide);
 
         vm.startPrank(contractAdmin);
-        stakingContract.provideInterest(amountToProvide);
-        assertEq(stakingContract.checkInterestProvidedBy(contractAdmin), amountToProvide);
+        stakingContract.provideReward(amountToProvide);
+        assertEq(stakingContract.checkRewardProvidedBy(contractAdmin), amountToProvide);
         vm.expectRevert();
-        stakingContract.collectInterestPoolFunds(amountToProvide);
+        stakingContract.collectRewardPoolFunds(amountToProvide);
         vm.stopPrank();
-        stakingContract.collectInterestPoolFunds(amountToProvide);
+        stakingContract.collectRewardPoolFunds(amountToProvide);
     }
 
-    function test_InterestManagement_NotEnoughFundsInTheInterestPool() external {
+    function test_RewardManagement_NotEnoughFundsInTheRewardPool() external {
         _increaseINTAllowance(address(this), amountToProvide);
 
-        stakingContract.provideInterest(amountToProvide);
-        stakingContract.collectInterestPoolFunds(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
+        stakingContract.collectRewardPoolFunds(amountToProvide);
 
         vm.expectRevert();
-        stakingContract.collectInterestPoolFunds(amountToProvide);
+        stakingContract.collectRewardPoolFunds(amountToProvide);
     }
 }

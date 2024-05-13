@@ -19,9 +19,9 @@ abstract contract WriteFunctions is ComplianceCheck {
 
             targetPool.withdrawerList[userAddress] += tokenAmount;
             targetPool.totalList[DataType.WITHDREW] += tokenAmount;
-        } else if (action == ActionType.INTEREST_CLAIM) {
-            targetPool.interestClaimerList[userAddress] += tokenAmount;
-            targetPool.totalList[DataType.INTEREST_CLAIMED] += tokenAmount;
+        } else if (action == ActionType.REWARD_CLAIM) {
+            targetPool.rewardClaimerList[userAddress] += tokenAmount;
+            targetPool.totalList[DataType.REWARD_CLAIMED] += tokenAmount;
         }
     }
 
@@ -45,9 +45,9 @@ abstract contract WriteFunctions is ComplianceCheck {
             TokenDeposit storage targetDeposit = targetDepositList[depositNumber];
             targetDeposit.withdrawalDate = block.timestamp;
             _updateStakerBalance(action, poolID, userAddress, tokenAmount);
-        } else if (action == ActionType.INTEREST_CLAIM) {
+        } else if (action == ActionType.REWARD_CLAIM) {
             TokenDeposit storage targetDeposit = targetDepositList[depositNumber];
-            targetDeposit.claimedInterest += tokenAmount;
+            targetDeposit.claimedReward += tokenAmount;
             _updateStakerBalance(action, poolID, userAddress, tokenAmount);
         }
     }

@@ -27,15 +27,15 @@ import "./contract-functions/WithdrawFunctions.sol";
 contract ERC20Staking is AdministrativeFunctions, StakingFunctions, WithdrawFunctions {
     constructor(
         address stakingTokenAddress,
-        address interestTokenAddress,
+        address rewardTokenAddress,
         uint256 _defaultStakingTarget,
         uint256 _defaultMinimumDeposit,
         uint256 _confirmationCode
-    ) ProgramManager(IERC20Metadata(stakingTokenAddress), IERC20Metadata(interestTokenAddress), _confirmationCode) {
+    ) ProgramManager(IERC20Metadata(stakingTokenAddress), IERC20Metadata(rewardTokenAddress), _confirmationCode) {
         if (_defaultMinimumDeposit == 0) revert InvalidArgumentValue("Minimum Deposit", 1);
 
         contractOwner = msg.sender;
-        treasuary = msg.sender;
+        treasury = msg.sender;
 
         defaultStakingTarget = _defaultStakingTarget;
         defaultMinimumDeposit = _defaultMinimumDeposit;

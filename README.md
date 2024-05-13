@@ -1,10 +1,10 @@
-# ERC20 Staking with Interest Token and Staking Fee
-![version](https://img.shields.io/badge/version-1.0.0-blue)
+# ERC20 Staking with Reward Token and Staking Fee
+![version](https://img.shields.io/badge/version-1.1.0-blue)
 
 ---
 ### Contract Introduction
 The contract based on and is modified version of https://github.com/RealityMetaverse/ERC1155-Marketplace-with-Dynamic-Pricing
-The contract allows to launch a staking program and to create an unlimited number of staking pools inside the program, which can be either locked or flexible. All pools use the designated ERC20 token assigned during program deployment inside the `constructor` function. Thanks to this contract user can stake in one ERC20 token (`STAKE_TOKEN`) while claiming the interest in a different ERC20 token (`INTEREST_TOKEN`). The contract also allows to cut certain percent of the token sent as a staking fee.
+The contract allows to launch a staking program and to create an unlimited number of staking pools inside the program, which can be either locked or flexible. All pools use the designated ERC20 token assigned during program deployment inside the `constructor` function. Thanks to this contract user can stake in one ERC20 token (`STAKE_TOKEN`) while claiming the reward in a different ERC20 token (`REWARD_TOKEN`). The contract also allows to cut certain percent of the token sent as a staking fee.
 
 ---
 ### Key Features
@@ -23,11 +23,11 @@ Each pool can have:
 - `minimumDeposit`
 - `APY`
 - `stakingFeePercentage`
-- Statuses (open or close) for staking, withdrawal, and interest claims controlled independently.
+- Statuses (open or close) for staking, withdrawal, and reward claims controlled independently.
 
 ---
 ### Supported Tokens
-The contract was initially written for RMV token staking. However, it supports all ERC20 tokens. Non-ERC20 tokens are not supported. Users earn interest in the token they staked in.
+The contract was initially written for RMV token staking. However, it supports all ERC20 tokens. Non-ERC20 tokens are not supported. Users earn reward in the token they staked in.
 
 ---
 ### User Experience
@@ -38,19 +38,19 @@ The contract was initially written for RMV token staking. However, it supports a
 - Each time a user stakes in a pool, a unique deposit is created and added to the deposit list of the user within that specific staking pool with the staking date and the APY that the staking pool had at the time of staking. This means that the returns on each deposit are calculated based on the APY the pool had at the moment of staking.
 
 ##### :warning: Warning
-- When a user interacts with the **program contract** for **staking**, **providing interest**, or **restoring funds**, please be aware that although the user initiates the transaction, the **program contract** technically carries out the expenditure. So, the user can get an **allowance too low** error, and the transaction can fail if the user doesn't interact with the **token contract** and approves the **program contract address** as a **spender** before interacting with the program contract.
+- When a user interacts with the **program contract** for **staking**, **providing reward**, or **restoring funds**, please be aware that although the user initiates the transaction, the **program contract** technically carries out the expenditure. So, the user can get an **allowance too low** error, and the transaction can fail if the user doesn't interact with the **token contract** and approves the **program contract address** as a **spender** before interacting with the program contract.
 - For this reason, before the user interacts with the program contract for these purposes, your application must take a crucial step to ensure that the user interacts with the **token contract** by calling the `increaseAllowance(spender, addedValue)` function of the **token contract**. This will allow the program contract to carry out the expenditure and ensure the smooth and proper functionality.
 
 
-**Interest Claim:**
-- Interest is calculated on a daily basis.
-- Interest is paid in the `INTEREST_TOKEN`
-- Stakers have the option to claim their accrued interest daily. This provides flexibility and frequent access to earned interests.
-- When interest is claimed, it is automatically calculated, collected from the common interest pool and sent to the staker if there are enough tokens in the interest pool.
+**Reward Claim:**
+- Reward is calculated on a daily basis.
+- Reward is paid in the `REWARD_TOKEN`
+- Stakers have the option to claim their accrued reward daily. This provides flexibility and frequent access to earned rewards.
+- When reward is claimed, it is automatically calculated, collected from the common reward pool and sent to the staker if there are enough tokens in the reward pool.
 
 
  **Withdrawal:**
-- When a staker decides to withdraw a deposit, the interest accrued on that deposit is also claimed simultaneously if the interest claim is open for that pool.
+- When a staker decides to withdraw a deposit, the reward accrued on that deposit is also claimed simultaneously if the reward claim is open for that pool.
 
 ---
 ### Access Control
@@ -78,10 +78,10 @@ The `contractOwner` can manage the program's overall functioning or configure st
 | `addStakingPoolCustom`           | `uint256 typeToSet` `uint256 stakingTargetToSet` `uint256 minimumDepositToSet` `uint256 stakingFeeToSet` `bool stakingAvailabilityStatus` `uint256 APYToSet`                                                                           | `onlyContractOwner` | Adds a new staking pool with custom properties.                                                                       |
 | `changePoolAvailabilityStatus`    | `uint256 poolID` `uint256 parameterToChange` `bool valueToAssign`                                                 | `onlyContractOwner`        | Modifies availability status of a staking pool.                                                                     |
 | `collectFunds`                    | `uint256 poolID` `uint256 tokenAmount`                                                                           | `onlyContractOwner`        | Collects staked funds from a staking pool.                                                                           |
-| `collectInterestPoolFunds`        | `uint256 tokenAmount`                                                                                           | `onlyContractOwner`        | Collects funds from the interest pool.                                                                       |
+| `collectRewardPoolFunds`        | `uint256 tokenAmount`                                                                                           | `onlyContractOwner`        | Collects funds from the reward pool.                                                                       |
 | `endStakingPool`                  | `uint256 poolID `uint256 _confirmationCode`                                                                     | `onlyContractOwner` | Ends a specified staking pool.                                                                               |
-| `pauseProgram`                    | None                                                                                                            | `onlyContractOwner` | Closes staking, withdrawal and interest claim for all the pools.                                                                               |
-| `provideInterest`                 | `uint256 tokenAmount`                                                                                           | `onlyAdmins`        | Adds funds to the interest pool.                                                                             |
+| `pauseProgram`                    | None                                                                                                            | `onlyContractOwner` | Closes staking, withdrawal and reward claim for all the pools.                                                                               |
+| `provideReward`                 | `uint256 tokenAmount`                                                                                           | `onlyAdmins`        | Adds funds to the reward pool.                                                                             |
 | `removeContractAdmin`             | `address userAddress`                                                                                           | `onlyContractOwner` | Removes a contract admin.                                                                            |
 | `resumeProgram`                   | None                                                                                                            | `onlyContractOwner` | Sets availability status of the staking pools back to predefined settings.                                                         |
 | `restoreFunds`                    | `uint256 poolID` `uint256 tokenAmount`                                                                           | `onlyAdmins`        | Restores collected funds back to a staking pool.                                                                     |
@@ -94,47 +94,47 @@ The `contractOwner` can manage the program's overall functioning or configure st
 
 
 > The predefined settings for the staking program are:
->  1. Both staking and interest claiming is open for locked and flexible pools.
+>  1. Both staking and reward claiming is open for locked and flexible pools.
 >  2. Withdrawal is open for flexible pools, but closed for locked pools.
 
 > *Note:* When a new staking pool is created, it is added to the array of staking pools. Each pool has a unique identifier, called poolID. This ID is essentially the index of the pool within the array. The numbering for poolID starts from zero and increments sequentially with each new pool addition. This means the first pool created will have a poolID of 0, the second pool will have a poolID of 1, and so on.
 
 ---
 ### Data Collection and Retrieval
-The program keeps detailed data of stakers, withdrawers, interest claimers, fund collectors, fund restorers, interest providers, and interest collectors in each pool and provides a set of read functions for easy data retrieval.
+The program keeps detailed data of stakers, withdrawers, reward claimers, fund collectors, fund restorers, reward providers, and reward collectors in each pool and provides a set of read functions for easy data retrieval.
 
 | Function   | Parameters                                                                                                 |
 |------------|------------------------------------------------------------------------------------------------------------|
 | `checkAPY`                         | `uint256 poolID`                                                                   |
-| `checkClaimableInterestBy`         | `address userAddress` `uint256 poolID` `uint256 depositNumber` `bool withDecimals` |
+| `checkClaimableRewardBy`         | `address userAddress` `uint256 poolID` `uint256 depositNumber` `bool withDecimals` |
 | `checkConfirmationCode`            | None                                                                               |
-| `checkDailyGeneratedInterest`      | `uint256 poolID`                                                                   |
+| `checkDailyGeneratedReward`      | `uint256 poolID`                                                                   |
 | `checkDefaultMinimumDeposit`       | None                                                                               |
 | `checkDefaultStakingTarget`        | None                                                                               |
 | `checkDepositCountOfAddress`       | `address userAddress` `uint256 poolID`                                             |
 | `checkDepositStakedAmount`         | `address userAddress` `uint256 poolID` `uint256 depositNumber`                     |
 | `checkEndDate`                     | `uint256 poolID`                                                                   |
-| `checkGeneratedInterestDailyTotal` | `uint256 poolID` `ifPrecise`                                                       |
-| `checkGeneratedInterestLastDayFor` | `address userAddress` `uint256 poolID`                                             |
-| `checkIfInterestClaimOpen`         | `uint256 poolID`                                                                   |
+| `checkGeneratedRewardDailyTotal` | `uint256 poolID` `ifPrecise`                                                       |
+| `checkGeneratedRewardLastDayFor` | `address userAddress` `uint256 poolID`                                             |
+| `checkIfRewardClaimOpen`         | `uint256 poolID`                                                                   |
 | `checkIfPoolEnded`                 | `uint256 poolID`                                                                   |
 | `checkIfStakingOpen`               | `uint256 poolID`                                                                   |
 | `checkIfWithdrawalOpen`            | `uint256 poolID`                                                                   |
-| `checkInterestClaimedBy`           | `address userAddress` `uint256 poolID`                                             |
-| `checkInterestPool`                | None                                                                               |
-| `checkInterestProvidedBy`          | `address userAddress`                                                              |
+| `checkRewardClaimedBy`           | `address userAddress` `uint256 poolID`                                             |
+| `checkRewardPool`                | None                                                                               |
+| `checkRewardProvidedBy`          | `address userAddress`                                                              |
 | `checkMinimumDeposit`              | `uint256 poolID`                                                                   |
 | `checkPoolCount`                   | None                                                                               |
 | `checkPoolType`                    | `uint256 poolID`                                                                   |
 | `checkRestoredFundsBy`             | `address userAddress` `uint256 poolID`                                             |
 | `checkStakedAmountBy`              | `address userAddress` `uint256 poolID`                                             |
 | `checkStakingTarget`               | `uint256 poolID`                                                                   |
-| `checkTotalClaimableInterest`      | `uint256 poolID`                                                                   |
-| `checkTotalClaimableInterestBy`    | `address userAddress` `uint256 poolID`                                             |
+| `checkTotalClaimableReward`      | `uint256 poolID`                                                                   |
+| `checkTotalClaimableRewardBy`    | `address userAddress` `uint256 poolID`                                             |
 | `checkTotalFeePaid`                | `uint256 poolID`                                                                   |
 | `checkTotalFundCollected`          | `uint256 poolID`                                                                   |
 | `checkTotalFundRestored`           | `uint256 poolID`                                                                   |
-| `checkTotalInterestClaimed`        | `uint256 poolID`                                                                   |
+| `checkTotalRewardClaimed`        | `uint256 poolID`                                                                   |
 | `checkTotalStaked`                 | `uint256 poolID`                                                                   |
 | `checkTotalWithdrawn`              | `uint256 poolID`                                                                   |
 | `checkWithdrawnAmountBy`           | `address userAddress` `uint256 poolID`                                             |

@@ -7,7 +7,7 @@ import "./ReadFunctions.sol";
 import "./WriteFunctions.sol";
 
 abstract contract StakingFunctions is ReadFunctions, WriteFunctions {
-    function stakeToken(uint256 poolID, uint256 tokenAmount)
+    function safeStake(uint256 poolID, uint256 tokenAmount, uint256 forMaxFeePercentage)
         external
         nonReentrant
         ifPoolExists(poolID)
@@ -16,6 +16,9 @@ abstract contract StakingFunctions is ReadFunctions, WriteFunctions {
         enoughTokenSent(tokenAmount, stakingPoolList[poolID].minimumDeposit)
     {
         StakingPool storage targetPool = stakingPoolList[poolID];
+
+        require(forMaxFeePercentage <= (targetPool.stakingFeePercentage / FIXED_POINT_PRECISION), "Staking Fee Increased");
+
         uint256 stakingFeeToBePaid;
         uint256 amountToBeStaked;
 
@@ -44,7 +47,7 @@ abstract contract StakingFunctions is ReadFunctions, WriteFunctions {
             targetPool.stakingFeePercentage / FIXED_POINT_PRECISION,
             stakingFeeToBePaid
         );
-        if (stakingFeeToBePaid != 0) _payTreasuaryStakingToken(stakingFeeToBePaid);
+        if (stakingFeeToBePaid != 0) _payTreasuryStakingToken(stakingFeeToBePaid);
         _receiveStakingToken(amountToBeStaked);
     }
 }

@@ -25,12 +25,12 @@ abstract contract ReadFunctions is ComplianceCheck {
         return defaultMinimumDeposit;
     }
 
-    function checkInterestPool() external view returns (uint256) {
-        return interestPool;
+    function checkRewardPool() external view returns (uint256) {
+        return rewardPool;
     }
 
-    function checkInterestProvidedBy(address userAddress) external view returns (uint256) {
-        return interestProviderList[userAddress];
+    function checkRewardProvidedBy(address userAddress) external view returns (uint256) {
+        return rewardProviderList[userAddress];
     }
 
     // ======================================
@@ -70,8 +70,8 @@ abstract contract ReadFunctions is ComplianceCheck {
         return stakingPoolList[poolID].isWithdrawalOpen;
     }
 
-    function checkIfInterestClaimOpen(uint256 poolID) external view ifPoolExists(poolID) returns (bool) {
-        return stakingPoolList[poolID].isInterestClaimOpen;
+    function checkIfRewardClaimOpen(uint256 poolID) external view ifPoolExists(poolID) returns (bool) {
+        return stakingPoolList[poolID].isRewardClaimOpen;
     }
 
     function checkIfPoolEnded(uint256 poolID) external view ifPoolExists(poolID) returns (bool) {
@@ -91,8 +91,8 @@ abstract contract ReadFunctions is ComplianceCheck {
         return stakingPoolList[poolID].totalList[DataType.WITHDREW];
     }
 
-    function checkTotalInterestClaimed(uint256 poolID) external view ifPoolExists(poolID) returns (uint256) {
-        return stakingPoolList[poolID].totalList[DataType.INTEREST_CLAIMED];
+    function checkTotalRewardClaimed(uint256 poolID) external view ifPoolExists(poolID) returns (uint256) {
+        return stakingPoolList[poolID].totalList[DataType.REWARD_CLAIMED];
     }
 
     function checkTotalFundCollected(uint256 poolID) external view ifPoolExists(poolID) returns (uint256) {
@@ -133,13 +133,13 @@ abstract contract ReadFunctions is ComplianceCheck {
         return stakingPoolList[poolID].withdrawerList[userAddress];
     }
 
-    function checkInterestClaimedBy(address userAddress, uint256 poolID)
+    function checkRewardClaimedBy(address userAddress, uint256 poolID)
         external
         view
         ifPoolExists(poolID)
         returns (uint256)
     {
-        return stakingPoolList[poolID].interestClaimerList[userAddress];
+        return stakingPoolList[poolID].rewardClaimerList[userAddress];
     }
 
     function checkRestoredFundsBy(address userAddress, uint256 poolID)

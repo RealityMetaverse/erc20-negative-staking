@@ -24,7 +24,7 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     error StakingFeePercentageOverflow(uint256 input, uint256 maxPercentage);
     /**
      * @dev
-     *     - Exception raised when the stakeToken function called while the isStakingOpen parameter of the pool is false
+     *     - Exception raised when the safeStake function called while the isStakingOpen parameter of the pool is false
      *     - Exception raised when the withdrawDeposit or withdrawAll function called while the isWithdrawalOpen parameter of the pool is false
      *
      */
@@ -41,6 +41,8 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     error RestorationExceedsCollected(uint256 _tokenSent, uint256 _RemainingAmountToRestore);
     /// @dev Exception raised when the user doesn't own enough token to stake and pay the staking fee
     error InsufficientBalance(uint256 intendedAmount, uint256 available);
+    /// @dev Exception raised when the user hasn't approved as many as tokens intended to staked
+    error InsufficientAllowance(uint256 intendedAmount, uint256 approvedAmount);
     /// @dev Exception raised when the intended token amount to stake is lower than StakingPool.minimumDeposit
     error InsufficentDeposit(uint256 _tokenSent, uint256 _requiredAmount);
     /// @dev Exception raised when users try to withdraw from a staking pool which they haven't staked any tokens in
@@ -52,8 +54,8 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
      *
      */
     error NotEnoughFundsInThePool(uint256 poolID, uint256 requestedAmount, uint256 availableAmount);
-    /// @dev Exception raised when the admins try to collect from the interestPool when there is not enough token to collect
-    error NotEnoughFundsInTheInterestPool(uint256 requestedAmount, uint256 availableAmount);
+    /// @dev Exception raised when the admins try to collect from the rewardPool when there is not enough token to collect
+    error NotEnoughFundsInTheRewardPool(uint256 requestedAmount, uint256 availableAmount);
     /**
      * @dev
      * - Exception raised when the contract owner tries to end a staking pool that is already ended
@@ -61,6 +63,7 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
      *
      */
     error PoolEnded(uint256 poolID);
+
 
     // ======================================
     // =             Functions              =
@@ -73,8 +76,8 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
             action = "Staking";
         } else if (propertyToCheck == PoolDataType.IS_WITHDRAWAL_OPEN && !targetPool.isWithdrawalOpen) {
             action = "Withdrawal";
-        } else if (propertyToCheck == PoolDataType.IS_INTEREST_CLAIM_OPEN && !targetPool.isInterestClaimOpen) {
-            action = "Interest Claim";
+        } else if (propertyToCheck == PoolDataType.IS_REWARD_CLAIM_OPEN && !targetPool.isRewardClaimOpen) {
+            action = "Reward Claim";
         }
 
         if (bytes(action).length != 0) revert NotOpen(poolID, action);
@@ -143,17 +146,21 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
         _;
     }
 
-    /// @dev Checks if the necessary pool is open for staking, withdrawal or interest claim, raises exception if not
+    /// @dev Checks if the necessary pool is open for staking, withdrawal or reward claim, raises exception if not
     modifier ifAvailable(uint256 poolID, PoolDataType propertyToCheck) {
         _checkAvailability(poolID, propertyToCheck);
         _;
     }
 
-    /// @dev Checks if the user owns enough token to stake and pay the staking fee
+    /// @dev Checks if the user owns enough tokens to stake and pay the staking fee
     modifier ifUserOwnsEnoughTokens(uint256 intendedAmount) {
         uint256 userBalance = STAKING_TOKEN.balanceOf(msg.sender);
         if (intendedAmount > userBalance) {
             revert InsufficientBalance(intendedAmount, userBalance);
+        }
+        uint256 approvedAmount = STAKING_TOKEN.allowance(msg.sender, address(this));
+        if (intendedAmount > approvedAmount) {
+            revert InsufficientAllowance(intendedAmount, approvedAmount);
         }
         _;
     }
@@ -187,9 +194,9 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
     }
 
     /// @dev Checks if enough funds available in a pool, raises exception if not
-    modifier enoughFundsInInterestPool(uint256 amountToCheck) {
-        if (amountToCheck > interestPool) {
-            revert NotEnoughFundsInTheInterestPool(amountToCheck, interestPool);
+    modifier enoughFundsInRewardPool(uint256 amountToCheck) {
+        if (amountToCheck > rewardPool) {
+            revert NotEnoughFundsInTheRewardPool(amountToCheck, rewardPool);
         }
         _;
     }
@@ -237,13 +244,13 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
         uint256 depositNumber,
         uint256 tokenAmount
     );
-    event ClaimInterest(address indexed by, uint256 indexed poolID, uint256 depositNumber, uint256 tokenAmount);
+    event ClaimReward(address indexed by, uint256 indexed poolID, uint256 depositNumber, uint256 tokenAmount);
 
     event CollectFunds(address indexed by, uint256 indexed poolID, uint256 tokenAmount);
     event RestoreFunds(address indexed by, uint256 indexed poolID, uint256 tokenAmount);
 
-    event ProvideInterest(address indexed by, uint256 tokenAmount);
-    event CollectInterest(address indexed by, uint256 tokenAmount);
+    event ProvideReward(address indexed by, uint256 tokenAmount);
+    event CollectReward(address indexed by, uint256 tokenAmount);
 
     event UpdateStakingTarget(uint256 poolID, uint256 newStakingTarget);
     event UpdateMinimumDeposit(uint256 poolID, uint256 newMinimumDeposit);
@@ -252,7 +259,7 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
 
     event UpdateStakingStatus(address indexed by, uint256 poolID, bool isOpen);
     event UpdateWithdrawalStatus(address indexed by, uint256 poolID, bool isOpen);
-    event UpdateInterestClaimStatus(address indexed by, uint256 poolID, bool isOpen);
+    event UpdateRewardClaimStatus(address indexed by, uint256 poolID, bool isOpen);
 
     // ======================================
     // =    Token Management Functions      =
@@ -261,19 +268,19 @@ abstract contract ComplianceCheck is AccessControl, ReentrancyGuard {
         STAKING_TOKEN.safeTransferFrom(msg.sender, address(this), tokenAmount);
     }
 
-    function _receiveInterestToken(uint256 tokenAmount) internal {
-        INTEREST_TOKEN.safeTransferFrom(msg.sender, address(this), tokenAmount);
+    function _receiveRewardToken(uint256 tokenAmount) internal {
+        REWARD_TOKEN.safeTransferFrom(msg.sender, address(this), tokenAmount);
     }
 
-    function _payTreasuaryStakingToken(uint256 tokenAmount) internal {
-        STAKING_TOKEN.safeTransferFrom(msg.sender, treasuary, tokenAmount);
+    function _payTreasuryStakingToken(uint256 tokenAmount) internal {
+        STAKING_TOKEN.safeTransferFrom(msg.sender, treasury, tokenAmount);
     }
 
     function _sendStakingToken(address toAddress, uint256 tokenAmount) internal {
         STAKING_TOKEN.safeTransfer(toAddress, tokenAmount);
     }
 
-    function _sendInterestToken(address toAddress, uint256 tokenAmount) internal {
-        INTEREST_TOKEN.safeTransfer(toAddress, tokenAmount);
+    function _sendRewardToken(address toAddress, uint256 tokenAmount) internal {
+        REWARD_TOKEN.safeTransfer(toAddress, tokenAmount);
     }
 }

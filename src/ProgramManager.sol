@@ -10,7 +10,7 @@ contract ProgramManager {
     // =          State Variables           =
     // ======================================
     IERC20Metadata public immutable STAKING_TOKEN;
-    IERC20Metadata public immutable INTEREST_TOKEN;
+    IERC20Metadata public immutable REWARD_TOKEN;
     uint256 internal constant FIXED_POINT_PRECISION = 10 ** 18;
 
     // Default value to set the stakingTarget property for the new StakingPool if not specified
@@ -25,13 +25,13 @@ contract ProgramManager {
      */
     uint256 internal immutable CONFIRMATION_CODE;
 
-    /// Program interest token balance for paying interests
-    uint256 internal interestPool;
+    /// Program reward token balance for paying rewards
+    uint256 internal rewardPool;
     /**
-     *   - The list of users who donated/provided interest tokens to the interestPool
-     *   - Direct token transactions (via receive function) ends up in the interestPool
+     *   - The list of users who donated/provided reward tokens to the rewardPool
+     *   - Direct token transactions (via receive function) ends up in the rewardPool
      */
-    mapping(address => uint256) internal interestProviderList;
+    mapping(address => uint256) internal rewardProviderList;
 
     /**
      *   - Each user can make infinite amount of deposits
@@ -42,7 +42,7 @@ contract ProgramManager {
         uint256 withdrawalDate;
         uint256 amount;
         uint256 APY;
-        uint256 claimedInterest;
+        uint256 claimedReward;
     }
 
     /**
@@ -59,7 +59,7 @@ contract ProgramManager {
     enum DataType {
         STAKED,
         WITHDREW,
-        INTEREST_CLAIMED,
+        REWARD_CLAIMED,
         FUNDS_COLLECTED,
         FUNDS_RESTORED,
         FEE_PAID
@@ -67,13 +67,13 @@ contract ProgramManager {
     enum PoolDataType {
         IS_STAKING_OPEN,
         IS_WITHDRAWAL_OPEN,
-        IS_INTEREST_CLAIM_OPEN
+        IS_REWARD_CLAIM_OPEN
     }
 
     enum ActionType {
         STAKING,
         WITHDRAWAL,
-        INTEREST_CLAIM
+        REWARD_CLAIM
     }
 
     /**
@@ -81,8 +81,8 @@ contract ProgramManager {
      *     - StakingPool's totalList[DataType.STAKED] parameter value can not be higher than stakingTarget
      */
     /**
-     *     - The endDate is set via endPool function when no more interest is intended to be paid after certain period of time
-     *     - If the current time has passed the endDate, endDate is used when calculating the interests
+     *     - The endDate is set via endPool function when no more reward is intended to be paid after certain period of time
+     *     - If the current time has passed the endDate, endDate is used when calculating the rewards
      */
     struct StakingPool {
         uint256 stakingTarget;
@@ -92,13 +92,13 @@ contract ProgramManager {
         uint256 endDate;
         bool isStakingOpen;
         bool isWithdrawalOpen;
-        bool isInterestClaimOpen;
+        bool isRewardClaimOpen;
         PoolType poolType;
         address[] stakerAddressList;
         mapping(address => uint256) stakerList;
         mapping(address => TokenDeposit[]) stakerDepositList;
         mapping(address => uint256) withdrawerList;
-        mapping(address => uint256) interestClaimerList;
+        mapping(address => uint256) rewardClaimerList;
         mapping(address => uint256) fundRestorerList;
         mapping(DataType => uint256) totalList;
     }
@@ -106,9 +106,9 @@ contract ProgramManager {
     // The list holding all the created pools
     StakingPool[] internal stakingPoolList;
 
-    constructor(IERC20Metadata _stakingToken, IERC20Metadata _interestToken, uint256 _confirmationCode) {
+    constructor(IERC20Metadata _stakingToken, IERC20Metadata _rewardToken, uint256 _confirmationCode) {
         STAKING_TOKEN = _stakingToken;
-        INTEREST_TOKEN = _interestToken;
+        REWARD_TOKEN = _rewardToken;
         CONFIRMATION_CODE = _confirmationCode;
     }
 }

@@ -1,28 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.20;
 
-import "./InterestClaimFunctions.sol";
+import "./RewardClaimFunctions.sol";
 
-contract WithdrawalFunctions is InterestClaimFunctions {
-    function _trackInterestClaimWithWithdrawal(address userAddress, uint256 _poolID, uint256 _depositNo)
+contract WithdrawalFunctions is RewardClaimFunctions {
+    function _trackRewardClaimWithWithdrawal(address userAddress, uint256 _poolID, uint256 _depositNo)
         internal
         view
         returns (uint256)
     {
-        uint256 _interestToClaim = 0;
+        uint256 _rewardToClaim = 0;
         if (_depositNo != 9999) {
-            _interestToClaim = stakingContract.checkClaimableInterestBy(userAddress, _poolID, _depositNo);
+            _rewardToClaim = stakingContract.checkClaimableRewardBy(userAddress, _poolID, _depositNo);
         } else {
             uint256 poolCount = stakingContract.checkPoolCount();
             for (uint256 _poolNo = 0; _poolNo < poolCount; _poolNo++) {
                 uint256 depositCount = stakingContract.checkDepositCountOfAddress(userAddress, _poolNo);
                 for (uint256 _dNo = 0; _dNo < depositCount; _dNo++) {
-                    _interestToClaim += stakingContract.checkClaimableInterestBy(userAddress, _poolNo, _dNo);
+                    _rewardToClaim += stakingContract.checkClaimableRewardBy(userAddress, _poolNo, _dNo);
                 }
             }
         }
 
-        return _interestToClaim;
+        return _rewardToClaim;
     }
 
     function _withdrawTokens(uint256 _poolID, uint256 _depositNo) internal {
@@ -38,7 +38,7 @@ contract WithdrawalFunctions is InterestClaimFunctions {
         uint256 _poolID,
         uint256 _depositNo,
         bool ifRevertExpected,
-        bool ifWithInterest
+        bool ifWithReward
     ) internal {
         uint256 totalWithdrawnBefore = _getTotalWithdrawn(_poolID);
         uint256 withdrawnByUser;
@@ -51,8 +51,8 @@ contract WithdrawalFunctions is InterestClaimFunctions {
         } else {
             uint256[] memory currentData = _getCurrentData(userAddress, _poolID);
 
-            uint256 _interestToClaim;
-            if (ifWithInterest) _interestToClaim = _trackInterestClaimWithWithdrawal(userAddress, _poolID, _depositNo);
+            uint256 _rewardToClaim;
+            if (ifWithReward) _rewardToClaim = _trackRewardClaimWithWithdrawal(userAddress, _poolID, _depositNo);
 
             uint256 withdrawnbyUserBefore = _getTotalWithdrawnBy(userAddress, _poolID);
             _withdrawTokens(_poolID, _depositNo);
@@ -64,8 +64,8 @@ contract WithdrawalFunctions is InterestClaimFunctions {
             expectedData[1] = currentData[1] + withdrawnByUser;
             expectedData[2] = currentData[2] - withdrawnByUser;
             expectedData[3] = currentData[3] - withdrawnByUser;
-            expectedData[5] = currentData[5] + _interestToClaim;
-            expectedData[6] = currentData[6] - _interestToClaim;
+            expectedData[5] = currentData[5] + _rewardToClaim;
+            expectedData[6] = currentData[6] - _rewardToClaim;
 
             currentData = _getCurrentData(userAddress, _poolID);
 
@@ -76,7 +76,7 @@ contract WithdrawalFunctions is InterestClaimFunctions {
             assertEq(currentData[5], expectedData[5]);
             assertEq(currentData[6], expectedData[6]);
 
-            if (ifWithInterest) assertEq(_trackInterestClaimWithWithdrawal(userAddress, _poolID, _depositNo), 0);
+            if (ifWithReward) assertEq(_trackRewardClaimWithWithdrawal(userAddress, _poolID, _depositNo), 0);
         }
 
         if (userAddress != address(this)) vm.stopPrank();

@@ -28,8 +28,8 @@ contract ReadFunctions is TestSetUp {
         return myToken.balanceOf(userAddress);
     }
 
-    function _getInterestTokenBalance(address userAddress) internal view returns (uint256) {
-        return myInterestToken.balanceOf(userAddress);
+    function _getRewardTokenBalance(address userAddress) internal view returns (uint256) {
+        return myRewardToken.balanceOf(userAddress);
     }
 
     function _getCurrentData(address userAddress, uint256 _poolID) internal view returns (uint256[] memory) {
@@ -38,9 +38,9 @@ contract ReadFunctions is TestSetUp {
         data[1] = _getTokenBalance(userAddress);
         data[2] = _getTotalStakedBy(userAddress, _poolID);
         data[3] = _getTokenBalance(address(stakingContract));
-        data[4] = _getTokenBalance(treasuaryAddress);
-        data[5] = _getInterestTokenBalance(userAddress);
-        data[6] = _getInterestTokenBalance(address(stakingContract));
+        data[4] = _getTokenBalance(treasuryAddress);
+        data[5] = _getRewardTokenBalance(userAddress);
+        data[6] = _getRewardTokenBalance(address(stakingContract));
         return data;
     }
 }

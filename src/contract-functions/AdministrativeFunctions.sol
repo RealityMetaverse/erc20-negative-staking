@@ -17,12 +17,12 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         emit TransferOwnership(msg.sender, userAddress);
     }
 
-    function changeTreasuryAddress(address newTreasuary) external onlyTreasuary {
-        require(newTreasuary != address(0), "New treasuary address cannot be zero");
-        require(newTreasuary != msg.sender, "Same with current treasuary");
-        treasuary = newTreasuary;
+    function changeTreasuryAddress(address newTreasury) external onlyTreasury {
+        require(newTreasury != address(0), "New treasury address cannot be zero");
+        require(newTreasury != msg.sender, "Same with current treasury");
+        treasury = newTreasury;
 
-        emit ChangeTreasuryAddress(msg.sender, newTreasuary);
+        emit ChangeTreasuryAddress(msg.sender, newTreasury);
     }
 
     function addContractAdmin(address userAddress) external onlyContractOwner {
@@ -67,7 +67,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         targetPool.stakingFeePercentage = stakingFeeToSet;
         targetPool.isStakingOpen = stakingAvailabilityStatus;
         targetPool.isWithdrawalOpen = (typeToSet == PoolType.LOCKED) ? false : true;
-        targetPool.isInterestClaimOpen = true;
+        targetPool.isRewardClaimOpen = true;
         targetPool.APY = APYToSet;
 
         emit AddStakingPool(
@@ -108,7 +108,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
      *     - Sets its minimumDeposit to defaultMinimumDeposit
      *     - Sets isStakingOpen true
      *     - Sets isWithdrawalOpen false
-     *     - Sets isInterestClaimOpen true
+     *     - Sets isRewardClaimOpen true
      *
      */
     function addStakingPoolDefault(PoolType typeToSet, uint256 APYToSet, uint256 stakingFeeToSet)
@@ -156,7 +156,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
      * @notice
      *     - Sets isStakingOpen parameter of all the staking pools to false
      *     - Sets isWithdrawalOpen parameter of all the staking pools to false
-     *     - Sets isInterestClaimOpen parameter of all the staking pools to false
+     *     - Sets isRewardClaimOpen parameter of all the staking pools to false
      *
      */
     function pauseProgram() external onlyContractOwner {
@@ -172,7 +172,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
      *     - Sets isStakingOpen parameter of all the staking pools to true
      *     - Sets isWithdrawalOpen parameter of all LOCKED staking pools to false
      *     - Sets isWithdrawalOpen parameter of all FLEXIBLE staking pools to true
-     *     - Sets isInterestClaimOpen parameter of all the staking pools to true
+     *     - Sets isRewardClaimOpen parameter of all the staking pools to true
      *
      */
     function resumeProgram() external onlyContractOwner {
@@ -212,9 +212,9 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
 
             emit UpdateWithdrawalStatus(msg.sender, poolID, valueToAssign);
         } else if (parameterToChange == 2) {
-            stakingPoolList[poolID].isInterestClaimOpen = valueToAssign;
+            stakingPoolList[poolID].isRewardClaimOpen = valueToAssign;
 
-            emit UpdateInterestClaimStatus(msg.sender, poolID, valueToAssign);
+            emit UpdateRewardClaimStatus(msg.sender, poolID, valueToAssign);
         }
     }
 
@@ -249,10 +249,10 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         ifPoolEnded(poolID)
     {
         if (newStakingFee > 100) revert StakingFeePercentageOverflow(newStakingFee, 100);
-        uint256 StakingFeeToWei = (newStakingFee == 0) ? newStakingFee : newStakingFee * FIXED_POINT_PRECISION;
-        require(StakingFeeToWei != stakingPoolList[poolID].stakingFeePercentage, "The same as current Staking Fee");
+        uint256 stakingFeeToWei = (newStakingFee == 0) ? newStakingFee : newStakingFee * FIXED_POINT_PRECISION;
+        require(stakingFeeToWei != stakingPoolList[poolID].stakingFeePercentage, "The same as current Staking Fee");
 
-        stakingPoolList[poolID].stakingFeePercentage = StakingFeeToWei;
+        stakingPoolList[poolID].stakingFeePercentage = stakingFeeToWei;
         emit UpdateStakingFee(poolID, newStakingFee);
     }
 
@@ -273,7 +273,7 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
      *     - Sets endDate property of a StakingPool to the date and time the function called
      *     - Sets isStakingOpen property of the StakingPoll to false
      *     - Sets isWithDrawal property of the StakingPoll to true
-     *     - Sets isInterestClaimOpen property of the StakingPoll to true
+     *     - Sets isRewardClaimOpen property of the StakingPoll to true
      *
      */
     function endStakingPool(uint256 poolID, uint256 _confirmationCode)
@@ -327,23 +327,23 @@ abstract contract AdministrativeFunctions is ComplianceCheck {
         _receiveStakingToken(tokenAmount);
     }
 
-    function collectInterestPoolFunds(uint256 tokenAmount)
+    function collectRewardPoolFunds(uint256 tokenAmount)
         external
         nonReentrant
         onlyContractOwner
-        enoughFundsInInterestPool(tokenAmount)
+        enoughFundsInRewardPool(tokenAmount)
     {
-        interestPool -= tokenAmount;
+        rewardPool -= tokenAmount;
 
-        emit CollectInterest(msg.sender, tokenAmount);
-        _sendInterestToken(msg.sender, tokenAmount);
+        emit CollectReward(msg.sender, tokenAmount);
+        _sendRewardToken(msg.sender, tokenAmount);
     }
 
-    function provideInterest(uint256 tokenAmount) external nonReentrant onlyAdmins {
-        interestProviderList[msg.sender] += tokenAmount;
-        interestPool += tokenAmount;
+    function provideReward(uint256 tokenAmount) external nonReentrant onlyAdmins {
+        rewardProviderList[msg.sender] += tokenAmount;
+        rewardPool += tokenAmount;
 
-        emit ProvideInterest(msg.sender, tokenAmount);
-        _receiveInterestToken(tokenAmount);
+        emit ProvideReward(msg.sender, tokenAmount);
+        _receiveRewardToken(tokenAmount);
     }
 }

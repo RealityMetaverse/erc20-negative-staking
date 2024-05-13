@@ -27,12 +27,12 @@ contract WithdrawalScenarious is WithdrawalFunctions {
         _tryMultiUserMultiStake(howManyTimes, false);
 
         _increaseINTAllowance(address(this), amountToProvide);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
 
         vm.warp(1738401000);
 
         for (uint256 No; No < howManyTimes; No++) {
-            console.log(stakingContract.checkTotalClaimableInterest(No));
+            console.log(stakingContract.checkTotalClaimableReward(No));
             for (uint256 userNo = 0; userNo < addressList.length; userNo++) {
                 for (uint256 timesStaked; timesStaked < 3; timesStaked++) {
                     _withdrawTokenWithTest(addressList[userNo], No, timesStaked, false, true);
@@ -79,20 +79,20 @@ contract WithdrawalScenarious is WithdrawalFunctions {
         _withdrawTokenWithTest(userOne, 0, 9999, false, true);
     }
 
-    function test_Withdrawal_WithInterest() external {
+    function test_Withdrawal_WithReward() external {
         _addPool(address(this), false);
 
         vm.warp(1706809873);
         _stakeTokenWithAllowance(userOne, 0, 100 * myTokenDecimals);
 
         _increaseINTAllowance(address(this), amountToProvide);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
 
         vm.warp(1738401000);
         _withdrawTokenWithTest(userOne, 0, 0, false, true);
     }
 
-    function test_Withdrawal_AllWithInterest() external {
+    function test_Withdrawal_AllWithReward() external {
         _addPool(address(this), false);
 
         vm.warp(1706809873);
@@ -101,13 +101,13 @@ contract WithdrawalScenarious is WithdrawalFunctions {
         }
 
         _increaseINTAllowance(address(this), amountToProvide);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
 
         vm.warp(1738401000);
         _withdrawTokenWithTest(userOne, 0, 9999, false, true);
     }
 
-    function test_Withdrawal_InterestClaimNotOpen() external {
+    function test_Withdrawal_RewardClaimNotOpen() external {
         _addPool(address(this), false);
         stakingContract.changePoolAvailabilityStatus(0, 2, false);
 
@@ -115,7 +115,7 @@ contract WithdrawalScenarious is WithdrawalFunctions {
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
 
         _increaseINTAllowance(address(this), amountToProvide);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
 
         vm.warp(1738401000);
         _withdrawTokenWithTest(userOne, 0, 0, false, false);
@@ -126,7 +126,7 @@ contract WithdrawalScenarious is WithdrawalFunctions {
         _addPool(address(this), true);
 
         _increaseINTAllowance(address(this), amountToProvide);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
 
         vm.warp(1706809873);
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
@@ -138,40 +138,40 @@ contract WithdrawalScenarious is WithdrawalFunctions {
         assertTrue(stakingContract.checkIfWithdrawalOpen(0));
         assertFalse(stakingContract.checkIfWithdrawalOpen(1));
 
-        assertTrue(stakingContract.checkIfInterestClaimOpen(0));
-        assertTrue(stakingContract.checkIfInterestClaimOpen(1));
+        assertTrue(stakingContract.checkIfRewardClaimOpen(0));
+        assertTrue(stakingContract.checkIfRewardClaimOpen(1));
 
         assertTrue(stakingContract.checkIfStakingOpen(1));
         assertFalse(stakingContract.checkIfStakingOpen(0));
 
         _withdrawTokenWithTest(userOne, 0, 0, false, true);
         _withdrawTokenWithTest(userOne, 1, 0, true, true);
-        assertEq(stakingContract.checkClaimableInterestBy(userOne, 0, 0), 0);
+        assertEq(stakingContract.checkClaimableRewardBy(userOne, 0, 0), 0);
 
         vm.warp(1738402000);
-        _claimInterestWithTest(userOne, 0, 0, true);
+        _claimRewardWithTest(userOne, 0, 0, true);
 
         _endPool(address(this), 1);
-        _claimInterestWithTest(userOne, 1, 0, false);
-        assertEq(stakingContract.checkClaimableInterestBy(userOne, 1, 0), 0);
+        _claimRewardWithTest(userOne, 1, 0, false);
+        assertEq(stakingContract.checkClaimableRewardBy(userOne, 1, 0), 0);
     }
 
-    function test_InterestClaim_DepositWithdrawn() external {
+    function test_RewardClaim_DepositWithdrawn() external {
         _addPool(address(this), false);
 
         vm.warp(1706809873);
         _stakeTokenWithAllowance(userOne, 0, amountToStake);
 
         _increaseINTAllowance(address(this), amountToProvide);
-        stakingContract.provideInterest(amountToProvide);
+        stakingContract.provideReward(amountToProvide);
 
         vm.warp(1707000000);
         _withdrawTokenWithTest(userOne, 0, 0, false, true);
-        assertEq(stakingContract.checkClaimableInterestBy(userOne, 0, 0), 0, "no interest");
+        assertEq(stakingContract.checkClaimableRewardBy(userOne, 0, 0), 0, "no reward");
 
         vm.warp(1708000000);
-        assertEq(stakingContract.checkClaimableInterestBy(userOne, 0, 0), 0, "no interest");
-        _claimInterestWithTest(userOne, 0, 0, true);
+        assertEq(stakingContract.checkClaimableRewardBy(userOne, 0, 0), 0, "no reward");
+        _claimRewardWithTest(userOne, 0, 0, true);
     }
 
     function test_WithdrawAll_AfterWithdrawal() external {
