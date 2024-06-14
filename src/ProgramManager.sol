@@ -99,6 +99,7 @@ contract ProgramManager {
         mapping(address => TokenDeposit[]) stakerDepositList;
         mapping(address => uint256) withdrawerList;
         mapping(address => uint256) rewardClaimerList;
+        mapping(address => uint256) feePayerList;
         mapping(address => uint256) fundRestorerList;
         mapping(DataType => uint256) totalList;
     }

@@ -1,6 +1,5 @@
-// SPDX-License-Identifier: Apache-2.0
-// Copyright 2024 HB Craft.
-
+// SPDX-License-Identifier: BUSL-1.1
+// Copyright 2024 Reality Metaverse
 pragma solidity 0.8.20;
 
 import "./ReadFunctions.sol";
@@ -33,7 +32,8 @@ abstract contract StakingFunctions is ReadFunctions, WriteFunctions {
 
         _checkIfTargetReached(poolID, amountToBeStaked);
 
-        // Update the total staking fee paid
+        // Update the total staking fee paid and the total staking fee paid by the user
+        targetPool.feePayerList[msg.sender] += stakingFeeToBePaid;
         targetPool.totalList[DataType.FEE_PAID] += stakingFeeToBePaid;
         // Update the staking pool balances
         _updatePoolData(ActionType.STAKING, poolID, msg.sender, 0, amountToBeStaked);

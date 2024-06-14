@@ -6,7 +6,7 @@ import "forge-std/console.sol";
 
 import {MockToken} from "./MockToken.sol";
 
-import {ERC20Staking} from "../src/ERC20Staking.sol";
+import {ERC20NegativeStaking} from "../src/ERC20NegativeStaking.sol";
 import "../src/ProgramManager.sol";
 
 contract TestSetUp is Test {
@@ -24,7 +24,7 @@ contract TestSetUp is Test {
 
     uint256 _stakingFee = 30;
 
-    ERC20Staking stakingContract;
+    ERC20NegativeStaking stakingContract;
     uint256 _confirmationCode = 0;
 
     address contractAdmin = address(1);
@@ -48,7 +48,7 @@ contract TestSetUp is Test {
         myToken = new MockToken(myTokenDecimal);
         myRewardToken = new MockToken(myTokenDecimal);
 
-        stakingContract = new ERC20Staking(
+        stakingContract = new ERC20NegativeStaking(
             address(myToken), address(myRewardToken), _defaultStakingTarget, _defaultMinimumDeposit, _confirmationCode
         );
         stakingContract.addContractAdmin(contractAdmin);
