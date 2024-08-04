@@ -9,7 +9,7 @@ Parameters
 
 Licensor:             RealityMetaverse OÜ
 
-Licensed Work:        Periodical Staking Contract
+Licensed Work:        Negative Staking Contract
                       The Licensed Work is (c) 2024 RealityMetaverse OÜ
 
 Additional Use Grant: None
